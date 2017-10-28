@@ -21,18 +21,23 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
-import data.PetContract;
-import data.PetDbHelper;
+import com.example.android.pets.data.PetContract;
+import com.example.android.pets.data.PetDbHelper;
 
 /**
  * Displays list of pets that were entered and stored in the app.
  */
 public class CatalogActivity extends AppCompatActivity {
+
+
+    private static final String LOG_TAG = CatalogActivity.class.getSimpleName();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +71,7 @@ public class CatalogActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // User clicked on a menu option in the app bar overflow menu
         switch (item.getItemId()) {
-            // Respond to a click on the "Insert dummy data" menu option
+            // Respond to a click on the "Insert dummy com.example.android.pets.data" menu option
             case R.id.action_insert_dummy_data:
                 // Do nothing for now
                 return true;
@@ -87,6 +92,7 @@ public class CatalogActivity extends AppCompatActivity {
 
         // To access our database, we instantiate our subclass of SQLiteOpenHelper
         // and pass the context, which is the current activity
+        Log.v(LOG_TAG, "Attempting to create the petdbhelper");
         PetDbHelper mDbHelper = new PetDbHelper(this);
 
         // Create and/or open a database to read from it

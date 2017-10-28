@@ -1,4 +1,4 @@
-package data;
+package com.example.android.pets.data;
 
 import android.provider.BaseColumns;
 
