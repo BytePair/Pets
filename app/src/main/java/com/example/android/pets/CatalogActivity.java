@@ -15,6 +15,7 @@
  */
 package com.example.android.pets;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -67,17 +68,24 @@ public class CatalogActivity extends AppCompatActivity {
         return true;
     }
 
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // User clicked on a menu option in the app bar overflow menu
+        // 3 button menu in the corner
         switch (item.getItemId()) {
             // Respond to a click on the "Insert dummy com.example.android.pets.data" menu option
             case R.id.action_insert_dummy_data:
-                // Do nothing for now
+
+                // Insert default pet
+                insertDefaultPet();
                 return true;
+
             // Respond to a click on the "Delete all entries" menu option
             case R.id.action_delete_all_entries:
-                // Do nothing for now
+
+                // Clear all pet data
+                clearPetData();
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -92,7 +100,6 @@ public class CatalogActivity extends AppCompatActivity {
 
         // To access our database, we instantiate our subclass of SQLiteOpenHelper
         // and pass the context, which is the current activity
-        Log.v(LOG_TAG, "Attempting to create the petdbhelper");
         PetDbHelper mDbHelper = new PetDbHelper(this);
 
         // Create and/or open a database to read from it
@@ -111,5 +118,58 @@ public class CatalogActivity extends AppCompatActivity {
             // resources and makes it invalid.
             cursor.close();
         }
+    }
+
+
+    /**
+     * Adds a default pet to shelter.db
+     */
+    private void insertDefaultPet() {
+
+        Log.v(LOG_TAG, "Adding default pet to db");
+
+        // create object with content values of our new pet
+        ContentValues values = new ContentValues();
+        values.put(PetContract.PetEntry.COLUMN_PET_NAME, "Garfield");
+        values.put(PetContract.PetEntry.COLUMN_PET_BREED, "Tabby");
+        values.put(PetContract.PetEntry.COLUMN_PET_GENDER, PetContract.PetEntry.GENDER_MALE);
+        values.put(PetContract.PetEntry.COLUMN_PET_WEIGHT, 7);
+
+        // get instance of our PetDbHelper
+        PetDbHelper mDbHelper = new PetDbHelper(this);
+
+        // use PetDbHelper to get writable db object
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+
+        // insert the content values we defined above
+        long result = db.insert(PetContract.PetEntry.TABLE_NAME, null, values);
+        if (result != -1) Log.v(LOG_TAG, "Pet added successfully on row #" + String.valueOf(result));
+
+        // update the TextView on the screen to update the row counter
+        displayDatabaseInfo();
+
+    }
+
+    /**
+     * Clears all rows from shelter.db
+     */
+    private void clearPetData() {
+
+        Log.v(LOG_TAG, "Attempting to delete all pet data");
+
+        PetDbHelper mDbHelper = new PetDbHelper(this);
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+
+        int result = db.delete(PetContract.PetEntry.TABLE_NAME, null, null);
+
+        if (result > 0) {
+            Log.v(LOG_TAG, "Deleted " + String.valueOf(result) + " rows from shelter.db");
+        } else if (result == 0) {
+            Log.e(LOG_TAG, "Error deleting rows: No rows left to delete");
+        } else {
+            Log.e(LOG_TAG, "Error deleting rows: Delete returned " + String.valueOf(result));
+        }
+
+        displayDatabaseInfo();
     }
 }
