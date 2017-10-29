@@ -31,6 +31,7 @@ import android.widget.TextView;
 import com.example.android.pets.data.PetContract;
 import com.example.android.pets.data.PetDbHelper;
 
+
 /**
  * Displays list of pets that were entered and stored in the app.
  */
@@ -38,6 +39,7 @@ public class CatalogActivity extends AppCompatActivity {
 
 
     private static final String LOG_TAG = CatalogActivity.class.getSimpleName();
+    private PetDbHelper mDbHelper;
 
 
     @Override
@@ -55,10 +57,20 @@ public class CatalogActivity extends AppCompatActivity {
             }
         });
 
+        // To access our database, we instantiate our subclass of SQLiteOpenHelper
+        // and pass the context, which is the current activity
+        mDbHelper = new PetDbHelper(this);
+    }
+
+    /**
+     * runs every time the activity starts again
+     */
+    @Override
+    protected void onStart() {
+        super.onStart();
         // Display database info
         displayDatabaseInfo();
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -74,11 +86,13 @@ public class CatalogActivity extends AppCompatActivity {
         // User clicked on a menu option in the app bar overflow menu
         // 3 button menu in the corner
         switch (item.getItemId()) {
+
             // Respond to a click on the "Insert dummy com.example.android.pets.data" menu option
             case R.id.action_insert_dummy_data:
 
                 // Insert default pet
                 insertDefaultPet();
+                displayDatabaseInfo();
                 return true;
 
             // Respond to a click on the "Delete all entries" menu option
@@ -86,6 +100,7 @@ public class CatalogActivity extends AppCompatActivity {
 
                 // Clear all pet data
                 clearPetData();
+                displayDatabaseInfo();
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -97,10 +112,6 @@ public class CatalogActivity extends AppCompatActivity {
      * the pets database.
      */
     private void displayDatabaseInfo() {
-
-        // To access our database, we instantiate our subclass of SQLiteOpenHelper
-        // and pass the context, which is the current activity
-        PetDbHelper mDbHelper = new PetDbHelper(this);
 
         // Create and/or open a database to read from it
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
@@ -135,9 +146,6 @@ public class CatalogActivity extends AppCompatActivity {
         values.put(PetContract.PetEntry.COLUMN_PET_GENDER, PetContract.PetEntry.GENDER_MALE);
         values.put(PetContract.PetEntry.COLUMN_PET_WEIGHT, 7);
 
-        // get instance of our PetDbHelper
-        PetDbHelper mDbHelper = new PetDbHelper(this);
-
         // use PetDbHelper to get writable db object
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
@@ -145,10 +153,8 @@ public class CatalogActivity extends AppCompatActivity {
         long result = db.insert(PetContract.PetEntry.TABLE_NAME, null, values);
         if (result != -1) Log.v(LOG_TAG, "Pet added successfully on row #" + String.valueOf(result));
 
-        // update the TextView on the screen to update the row counter
-        displayDatabaseInfo();
-
     }
+
 
     /**
      * Clears all rows from shelter.db
@@ -157,7 +163,6 @@ public class CatalogActivity extends AppCompatActivity {
 
         Log.v(LOG_TAG, "Attempting to delete all pet data");
 
-        PetDbHelper mDbHelper = new PetDbHelper(this);
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
         int result = db.delete(PetContract.PetEntry.TABLE_NAME, null, null);
@@ -170,6 +175,7 @@ public class CatalogActivity extends AppCompatActivity {
             Log.e(LOG_TAG, "Error deleting rows: Delete returned " + String.valueOf(result));
         }
 
-        displayDatabaseInfo();
     }
+
+
 }

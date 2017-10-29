@@ -15,6 +15,8 @@
  */
 package com.example.android.pets;
 
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
@@ -26,8 +28,11 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Toast;
 
+import com.example.android.pets.data.PetContract;
 import com.example.android.pets.data.PetContract.PetEntry;
+import com.example.android.pets.data.PetDbHelper;
 
 /**
  * Allows user to create a new pet or edit an existing one.
@@ -105,6 +110,51 @@ public class EditorActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Get user input from editor and save new pet into database
+     */
+    private void insertPet() {
+
+        // get values from edit text fields and spinner
+        String iName = mNameEditText.getText().toString().trim();
+        String iBreed = mBreedEditText.getText().toString().trim();
+        int iWeight = TextUtils.isEmpty(mWeightEditText.getText().toString().trim()) ? 0 : Integer.parseInt(mWeightEditText.getText().toString().trim());
+        int iGender = mGender;
+
+        // return early if there is any empty fields
+        if (iName.length() == 0) {
+            Toast.makeText(this, "Error Saving Pet: No Name", Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (iBreed.length() == 0) {
+            Toast.makeText(this, "Error Saving Pet: No Breed", Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (iWeight <= 0) {
+            Toast.makeText(this, "Error Saving Pet: No Weight", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // content values object to hold every attribute for the new row
+        ContentValues values = new ContentValues();
+        values.put(PetEntry.COLUMN_PET_NAME, iName);
+        values.put(PetEntry.COLUMN_PET_BREED, iBreed);
+        values.put(PetEntry.COLUMN_PET_WEIGHT, iWeight);
+        values.put(PetEntry.COLUMN_PET_GENDER, iGender);
+
+        // get connection to the db
+        PetDbHelper dbHelper = new PetDbHelper(this);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        long result = db.insert(PetEntry.TABLE_NAME, null, values);
+
+        // print toast based on result
+        if (result >= 0) {
+            Toast.makeText(this, "Pet saved with id: " + String.valueOf(result), Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this, "Error with saving pet", Toast.LENGTH_LONG).show();
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu options from the res/menu/menu_editor.xml file.
@@ -113,13 +163,19 @@ public class EditorActivity extends AppCompatActivity {
         return true;
     }
 
+    /**
+     * Select what happens when user clicks on different options in app bar overflow menu
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // User clicked on a menu option in the app bar overflow menu
         switch (item.getItemId()) {
             // Respond to a click on the "Save" menu option
             case R.id.action_save:
-                // Do nothing for now
+                // Insert New Pet
+                insertPet();
+                // Exit EditorActivity and return to CatalogActivity
+                finish();
                 return true;
             // Respond to a click on the "Delete" menu option
             case R.id.action_delete:
