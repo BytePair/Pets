@@ -116,14 +116,61 @@ public class CatalogActivity extends AppCompatActivity {
         // Create and/or open a database to read from it
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
-        // Perform this raw SQL query "SELECT * FROM pets"
-        // to get a Cursor that contains all rows from the pets table.
-        Cursor cursor = db.rawQuery("SELECT * FROM " + PetContract.PetEntry.TABLE_NAME, null);
+        /*
+            Old Code
+            Perform this raw SQL query "SELECT * FROM pets"
+            to get a Cursor that contains all rows from the pets table.
+            Cursor cursor = db.rawQuery("SELECT * FROM " + PetContract.PetEntry.TABLE_NAME, null);
+         */
+
+        // Define a projection that specifies which columns from the db you will use after this query
+        String[] projection = {
+                PetContract.PetEntry._ID,
+                PetContract.PetEntry.COLUMN_PET_NAME,
+                PetContract.PetEntry.COLUMN_PET_BREED,
+                PetContract.PetEntry.COLUMN_PET_GENDER,
+                PetContract.PetEntry.COLUMN_PET_WEIGHT
+        };
+
+        // Define where part of query
+        String selection = PetContract.PetEntry._ID + "=?";
+
+        // Specify arguments in placeholder order
+        String[] selectionArgs = {"1"};
+
+        // Get cursor that contains all rows from the pet table
+        Cursor cursor = db.query(
+                PetContract.PetEntry.TABLE_NAME,    // table to query
+                projection,                         // projection: columns to return
+                null,                          // selection: columns for the WHERE clause
+                null,                      // selection args: values for the WHERE clause
+                null,                      // groupBy: group the rows
+                null,                       // having: filter the rows
+                null                       // orderBy: sort order
+        );
+
         try {
-            // Display the number of rows in the Cursor (which reflects the number of rows in the
-            // pets table in the database).
+            /*
+                Old Code
+                Display the number of rows in the Cursor (which reflects the number of rows in the
+                pets table in the database).
+                displayView.setText("Number of rows in pets database table: " + cursor.getCount());
+             */
             TextView displayView = (TextView) findViewById(R.id.text_view_pet);
-            displayView.setText("Number of rows in pets database table: " + cursor.getCount());
+
+            // Clear the old text
+            displayView.setText("");
+
+            // Iterate through all the returned rows in the cursor
+            while (cursor.moveToNext()) {
+                // Use that index to extract the String or Int value
+                // of the word at the current row the cursor is on
+                int currentID = cursor.getInt(cursor.getColumnIndex(PetContract.PetEntry._ID));
+                String currentName = cursor.getString(cursor.getColumnIndex(PetContract.PetEntry.COLUMN_PET_NAME));
+                // Display the values from each column of the current row in the cursor in the TextView
+                displayView.append("\n" + currentID + " - " + currentName);
+            }
+
         } finally {
             // Always close the cursor when you're done reading from it. This releases all its
             // resources and makes it invalid.
@@ -165,11 +212,14 @@ public class CatalogActivity extends AppCompatActivity {
 
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
+        // delete all rows from the pets table
         int result = db.delete(PetContract.PetEntry.TABLE_NAME, null, null);
+        // delete ROWID from SQLITE_SEQUENCE table so primary key id resets
+        int result2 = db.delete("SQLITE_SEQUENCE", "name=?", new String[]{PetContract.PetEntry.TABLE_NAME});
 
-        if (result > 0) {
+        if (result > 0 && result2 > 0) {
             Log.v(LOG_TAG, "Deleted " + String.valueOf(result) + " rows from shelter.db");
-        } else if (result == 0) {
+        } else if (result == 0 && result2 == 0) {
             Log.e(LOG_TAG, "Error deleting rows: No rows left to delete");
         } else {
             Log.e(LOG_TAG, "Error deleting rows: Delete returned " + String.valueOf(result));
