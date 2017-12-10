@@ -19,6 +19,7 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -132,30 +133,18 @@ public class CatalogActivity extends AppCompatActivity {
                 PetContract.PetEntry.COLUMN_PET_WEIGHT
         };
 
-        // Define where part of query
-        String selection = PetContract.PetEntry._ID + "=?";
-
-        // Specify arguments in placeholder order
-        String[] selectionArgs = {"1"};
-
-        // Get cursor that contains all rows from the pet table
-        Cursor cursor = db.query(
-                PetContract.PetEntry.TABLE_NAME,    // table to query
-                projection,                         // projection: columns to return
-                null,                          // selection: columns for the WHERE clause
-                null,                      // selection args: values for the WHERE clause
-                null,                      // groupBy: group the rows
-                null,                       // having: filter the rows
-                null                       // orderBy: sort order
-        );
+        // Perform a query on the provider using the ContentResolver.
+        // Use the {@link PetContract.PetEntry.CONTENT_URI} to access the pet data.
+        Cursor cursor = getContentResolver().query(
+                PetContract.PetEntry.CONTENT_URI,       // The content URI of the words table
+                projection,                             // The columns to return for each row
+                null,                           // Selection criteria
+                null,                       // Selection arguments
+                null);                         // Sort order for returned rows
 
         try {
-            /*
-                Old Code
-                Display the number of rows in the Cursor (which reflects the number of rows in the
-                pets table in the database).
-                displayView.setText("Number of rows in pets database table: " + cursor.getCount());
-             */
+
+            // Find the text view
             TextView displayView = (TextView) findViewById(R.id.text_view_pet);
 
             // Clear the old text
@@ -186,19 +175,21 @@ public class CatalogActivity extends AppCompatActivity {
 
         Log.v(LOG_TAG, "Adding default pet to db");
 
-        // create object with content values of our new pet
+        // Create a ContentValues object where column names are the keys,
+        // and Toto's pet attributes are the values.
         ContentValues values = new ContentValues();
-        values.put(PetContract.PetEntry.COLUMN_PET_NAME, "Garfield");
-        values.put(PetContract.PetEntry.COLUMN_PET_BREED, "Tabby");
+        values.put(PetContract.PetEntry.COLUMN_PET_NAME, "Toto");
+        values.put(PetContract.PetEntry.COLUMN_PET_BREED, "Terrier");
         values.put(PetContract.PetEntry.COLUMN_PET_GENDER, PetContract.PetEntry.GENDER_MALE);
         values.put(PetContract.PetEntry.COLUMN_PET_WEIGHT, 7);
 
-        // use PetDbHelper to get writable db object
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        // Insert a new row for Toto into the provider using the ContentResolver.
+        // Use the {@link PetEntry#CONTENT_URI} to indicate that we want to insert
+        // into the pets database table.
+        // Receive the new content URI that will allow us to access Toto's data in the future.
+        Uri newUri = getContentResolver().insert(PetContract.PetEntry.CONTENT_URI, values);
 
-        // insert the content values we defined above
-        long result = db.insert(PetContract.PetEntry.TABLE_NAME, null, values);
-        if (result != -1) Log.v(LOG_TAG, "Pet added successfully on row #" + String.valueOf(result));
+        if (newUri != null) Log.v(LOG_TAG, "Pet added successfully");
 
     }
 
