@@ -27,6 +27,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.example.android.pets.data.PetContract;
@@ -61,6 +62,7 @@ public class CatalogActivity extends AppCompatActivity {
         // To access our database, we instantiate our subclass of SQLiteOpenHelper
         // and pass the context, which is the current activity
         mDbHelper = new PetDbHelper(this);
+
     }
 
     /**
@@ -117,13 +119,6 @@ public class CatalogActivity extends AppCompatActivity {
         // Create and/or open a database to read from it
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
-        /*
-            Old Code
-            Perform this raw SQL query "SELECT * FROM pets"
-            to get a Cursor that contains all rows from the pets table.
-            Cursor cursor = db.rawQuery("SELECT * FROM " + PetContract.PetEntry.TABLE_NAME, null);
-         */
-
         // Define a projection that specifies which columns from the db you will use after this query
         String[] projection = {
                 PetContract.PetEntry._ID,
@@ -142,29 +137,17 @@ public class CatalogActivity extends AppCompatActivity {
                 null,                       // Selection arguments
                 null);                         // Sort order for returned rows
 
-        try {
+        // Find the ListView which will be populated with the pet data
+        ListView petListView = (ListView) findViewById(R.id.list_view_pet);
 
-            // Find the text view
-            TextView displayView = (TextView) findViewById(R.id.text_view_pet);
+        // Find and set empty view on the ListView, so that it only shows when the list has 0 items.
+        View emptyView = findViewById(R.id.empty_view);
+        petListView.setEmptyView(emptyView);
 
-            // Clear the old text
-            displayView.setText("");
+        // Set the adapter
+        PetCursorAdapter petCursorAdapter = new PetCursorAdapter(this, cursor);
+        petListView.setAdapter(petCursorAdapter);
 
-            // Iterate through all the returned rows in the cursor
-            while (cursor.moveToNext()) {
-                // Use that index to extract the String or Int value
-                // of the word at the current row the cursor is on
-                int currentID = cursor.getInt(cursor.getColumnIndex(PetContract.PetEntry._ID));
-                String currentName = cursor.getString(cursor.getColumnIndex(PetContract.PetEntry.COLUMN_PET_NAME));
-                // Display the values from each column of the current row in the cursor in the TextView
-                displayView.append("\n" + currentID + " - " + currentName);
-            }
-
-        } finally {
-            // Always close the cursor when you're done reading from it. This releases all its
-            // resources and makes it invalid.
-            cursor.close();
-        }
     }
 
 
