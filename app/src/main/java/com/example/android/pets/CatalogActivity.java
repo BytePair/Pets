@@ -16,12 +16,12 @@
 package com.example.android.pets;
 
 import android.app.LoaderManager.LoaderCallbacks;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -30,8 +30,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
-
 
 import com.example.android.pets.data.PetContract;
 import com.example.android.pets.data.PetDbHelper;
@@ -44,7 +44,7 @@ public class CatalogActivity extends AppCompatActivity implements LoaderCallback
 
 
     private static final String LOG_TAG = CatalogActivity.class.getSimpleName();
-    private static final int LoaderId = 1;
+    private static final int LoaderId = 0;
     private PetDbHelper mDbHelper;
     private PetCursorAdapter petCursorAdapter;
 
@@ -80,13 +80,33 @@ public class CatalogActivity extends AppCompatActivity implements LoaderCallback
         petCursorAdapter = new PetCursorAdapter(this, null);
         petListView.setAdapter(petCursorAdapter);
 
+        // Set up item click listener
+        petListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+                // Create new intent to go to {@link EditorActivity}
+                Intent intent = new Intent(CatalogActivity.this, EditorActivity.class);
 
+                // Form the content URI that represents the specific pet that was clicked on
+                // by appending the "id" (passed as input to this method) onto the
+                // {@link PetEntry#CONTENT_URI}
+                // For example, the URI would be "content://com.example.android.pets/pets/2"
+                // if the pet with ID 2 was clicked
+                Uri currentPetUri = ContentUris.withAppendedId(PetContract.PetEntry.CONTENT_URI, id);
 
+                // Set the URI on the data field of the intent
+                intent.setData(currentPetUri);
+
+                // Launch the {@link EditorActivity} to display data for the current pet
+                startActivity(intent);
+            }
+        });
 
         // Prepare the loader.  Either re-connect with an existing one or start a new one.
         getLoaderManager().initLoader(LoaderId, null, this);
 
     }
+
 
     /**
      * runs every time the activity starts again
@@ -170,16 +190,11 @@ public class CatalogActivity extends AppCompatActivity implements LoaderCallback
 
         Log.v(LOG_TAG, "Attempting to delete all pet data");
 
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        int result = getContentResolver().delete(PetContract.PetEntry.CONTENT_URI, null, null);
 
-        // delete all rows from the pets table
-        int result = db.delete(PetContract.PetEntry.TABLE_NAME, null, null);
-        // delete ROWID from SQLITE_SEQUENCE table so primary key id resets
-        int result2 = db.delete("SQLITE_SEQUENCE", "name=?", new String[]{PetContract.PetEntry.TABLE_NAME});
-
-        if (result > 0 && result2 > 0) {
+        if (result > 0) {
             Log.v(LOG_TAG, "Deleted " + String.valueOf(result) + " rows from shelter.db");
-        } else if (result == 0 && result2 == 0) {
+        } else if (result == 0) {
             Log.e(LOG_TAG, "Error deleting rows: No rows left to delete");
         } else {
             Log.e(LOG_TAG, "Error deleting rows: Delete returned " + String.valueOf(result));
